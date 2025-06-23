@@ -6,7 +6,7 @@ import asyncio
 from pyrogram import filters
 from pyrogram.enums import ChatMemberStatus
 from XQUEEN import app
-from XQUEEN.utils.Sonali_ban import admin_filter
+from XQUEEN.utils.Queen_ban import admin_filter
 from XQUEEN.utils.database import get_assistant
 
 links = {}
