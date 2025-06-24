@@ -60,20 +60,23 @@ async def get_thumb(videoid):
         template = Image.open("XQUEEN/assets/thum.png").convert("RGBA")
         final_img = Image.new("RGBA", template.size, (0, 0, 0, 255))
 
+        # Background blur
         bg = raw_thumb.resize(template.size).filter(ImageFilter.GaussianBlur(10))
         final_img.paste(bg, (0, 0))
 
+        # Template on top
         final_img.paste(template, (0, 0), mask=template)
 
-        # ✅ FINAL placement: Perfectly fits circular ring
+        # 🟢 Adjusted: Circular thumbnail size and position
         thumb_size = 430  # Increased from 400 to 430
-circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
+        circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-ring_center_x, ring_center_y = 470, 500  # Moved center a bit lower (480 → 500)
-thumb_x = ring_center_x - thumb_size // 2
-thumb_y = ring_center_y - thumb_size // 2
+        ring_center_x, ring_center_y = 470, 500  # Moved down from y=480 to y=500
+        thumb_x = ring_center_x - thumb_size // 2
+        thumb_y = ring_center_y - thumb_size // 2
         final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
 
+        # Text drawing
         draw = ImageDraw.Draw(final_img)
         font_title = ImageFont.truetype("XQUEEN/assets/font.ttf", 45)
         font_tag = ImageFont.truetype("XQUEEN/assets/font2.ttf", 25)
@@ -83,6 +86,7 @@ thumb_y = ring_center_y - thumb_size // 2
         draw.text((530, 350), f"00:00 / {duration}", fill="white", font=font_tag)
         draw.text((1250, 810), "XQUEEN SERVER", fill="white", font=font_tag)
 
+        # Save final image
         final_img.convert("RGB").save(output_path)
         os.remove(f"cache/tmp_{videoid}.png")
         return output_path
