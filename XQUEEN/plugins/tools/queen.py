@@ -7,7 +7,7 @@ from BrandrdXMusic import app
 @app.on_message(filters.command("repo"))
 async def help(client: Client, message: Message):
     await message.reply_photo(
-        photo="https://telegra.ph/file/1aac9a42f6f35138da34b.jpg",
+        photo="https://files.catbox.moe/f8i9s1.jpg",
         caption="""
 𓆩🍁𓆪 𝐇𝐞𝐲 𝐁𝐚𝐛𝐲 💞
 
@@ -19,7 +19,7 @@ async def help(client: Client, message: Message):
             [
                 [
                     InlineKeyboardButton(
-                        "𓆩⚡ 𝙊𝙋𝙀𝙉 𝙍𝙀𝙋𝙊 ⚡𓆪", url="https://github.com/WCGKING/BrandrdXMusic"
+                        "𓆩⚡ 𝙊𝙋𝙀𝙉 𝙍𝙀𝙋𝙊 ⚡𓆪", url="https://github.com/ASIFXQUEEN903/XQUEEN-MUSIC--903"
                     )
                 ]
             ]
