@@ -1,7 +1,4 @@
-import os
-import re
-import aiohttp
-import aiofiles
+import os, re, aiohttp, aiofiles
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from unidecode import unidecode
 from youtubesearchpython.__future__ import VideosSearch
@@ -10,30 +7,11 @@ from XQUEEN import app
 
 
 def clear(text):
-    """Limits text to approximately 60 characters to prevent overflow"""
     result = ""
     for word in text.split():
         if len(result) + len(word) < 60:
             result += " " + word
     return result.strip()
-
-
-def create_circular_thumb(image, size):
-    """Creates a perfect circular thumbnail with transparent background"""
-    width, height = image.size
-    min_dim = min(width, height)
-    left = (width - min_dim) // 2
-    top = (height - min_dim) // 2
-    crop = image.crop((left, top, left + min_dim, top + min_dim))
-    crop = crop.resize((size, size))
-
-    mask = Image.new("L", (size, size), 0)
-    draw = ImageDraw.Draw(mask)
-    draw.ellipse((0, 0, size, size), fill=255)
-
-    result = Image.new("RGBA", (size, size))
-    result.paste(crop, (0, 0), mask=mask)
-    return result
 
 
 async def get_thumb(videoid):
@@ -56,37 +34,48 @@ async def get_thumb(videoid):
                     async with aiofiles.open(f"cache/tmp_{videoid}.png", "wb") as f:
                         await f.write(await resp.read())
 
+        # Load images
         raw_thumb = Image.open(f"cache/tmp_{videoid}.png").convert("RGB")
         template = Image.open("XQUEEN/assets/thum.png").convert("RGBA")
         final_img = Image.new("RGBA", template.size, (0, 0, 0, 255))
 
-        # Background blur
+        # Optional blurred background
         bg = raw_thumb.resize(template.size).filter(ImageFilter.GaussianBlur(10))
         final_img.paste(bg, (0, 0))
 
-        # Template on top
+        # Paste template overlay
         final_img.paste(template, (0, 0), mask=template)
 
-        # 🟢 Adjusted: Circular thumbnail size and position
-        thumb_size = 470  # Increased from 400 to 430
-        circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
+        # Step 1: Crop square from center
+        width, height = raw_thumb.size
+        min_dim = min(width, height)
+        left = (width - min_dim) // 2
+        top = (height - min_dim) // 2
+        thumb_crop = raw_thumb.crop((left, top, left + min_dim, top + min_dim))
 
-        ring_center_x, ring_center_y = 550, 500  # Moved down from y=480 to y=500
-        thumb_x = ring_center_x - thumb_size // 2
-        thumb_y = ring_center_y - thumb_size // 2
-        final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
+        # Step 2: Resize to circle size
+        circle_size = 496
+        thumb_resized = thumb_crop.resize((circle_size, circle_size))
 
-        # Text drawing
+        # Step 3: Create circular mask
+        mask = Image.new("L", (circle_size, circle_size), 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, circle_size, circle_size), fill=255)
+        thumb_resized.putalpha(mask)
+
+        # Step 4: Paste at correct position (center_x=314, center_y=406)
+        final_img.paste(thumb_resized, (66, 158), mask=thumb_resized)
+
+        # Add title and texts
         draw = ImageDraw.Draw(final_img)
         font_title = ImageFont.truetype("XQUEEN/assets/font.ttf", 45)
         font_tag = ImageFont.truetype("XQUEEN/assets/font2.ttf", 25)
 
-        title_text = clear(title)
-        draw.text((630, 50), title_text, fill="white", font=font_title)
+        draw.text((630, 50), clear(title), fill="white", font=font_title)
         draw.text((530, 350), f"00:00 / {duration}", fill="white", font=font_tag)
         draw.text((1250, 810), "XQUEEN SERVER", fill="white", font=font_tag)
 
-        # Save final image
+        # Save final output
         final_img.convert("RGB").save(output_path)
         os.remove(f"cache/tmp_{videoid}.png")
         return output_path
