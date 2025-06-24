@@ -407,7 +407,15 @@ async def vote_change(client, CallbackQuery, _):
 async def gib_back_to_panel(client, CallbackQuery, _):
     if CallbackQuery.message.chat.type == ChatType.PRIVATE:
         buttons = private_panel(_)
-        return await CallbackQuery.edit_message_text(
-            _["start_2"].format(CallbackQuery.from_user.mention, app.mention),
+
+        # Replace video with a photo (or remove media)
+        await CallbackQuery.edit_message_media(
+            media=InputMediaPhoto("https://files.catbox.moe/f8i9s1.jpg"),  # 👈 set your original photo here
             reply_markup=InlineKeyboardMarkup(buttons)
         )
+
+        # Then optionally update caption/text
+        await CallbackQuery.edit_message_caption(
+            caption=_["start_2"].format(CallbackQuery.from_user.mention, app.mention),
+            reply_markup=InlineKeyboardMarkup(buttons)
+               )
