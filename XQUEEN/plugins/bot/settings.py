@@ -221,7 +221,7 @@ async def addition(client, CallbackQuery, _):
 @languageCB
 async def gib_repo(client, CallbackQuery, _):
     await CallbackQuery.edit_message_media(
-        InputMediaVideo("https://te.legra.ph/file/ef47f077b671f69f8d8f0.mp4"),
+        InputMediaVideo("https://files.catbox.moe/8edpbi.mp4"),
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton(text="ʙᴀᴄᴋ", callback_data=f"settings_back_helper")]]
         ),
