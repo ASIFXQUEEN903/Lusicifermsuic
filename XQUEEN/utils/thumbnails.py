@@ -66,12 +66,12 @@ async def get_thumb(videoid):
         final_img.paste(template, (0, 0), mask=template)
 
         # ✅ FINAL placement: Perfectly fits circular ring
-        thumb_size = 400  # Slightly smaller to fit fully inside white ring
-        circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
+        thumb_size = 430  # Increased from 400 to 430
+circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-        ring_center_x, ring_center_y = 470, 480  # For 1280×720 template
-        thumb_x = ring_center_x - thumb_size // 2
-        thumb_y = ring_center_y - thumb_size // 2
+ring_center_x, ring_center_y = 470, 500  # Moved center a bit lower (480 → 500)
+thumb_x = ring_center_x - thumb_size // 2
+thumb_y = ring_center_y - thumb_size // 2
         final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
 
         draw = ImageDraw.Draw(final_img)
