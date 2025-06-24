@@ -63,8 +63,8 @@ async def get_thumb(videoid):
         draw.ellipse((0, 0, circle_size, circle_size), fill=255)
         thumb_resized.putalpha(mask)
 
-        # Step 4: Paste at correct position (center_x=314, center_y=406)
-        final_img.paste(thumb_resized, (66, 158), mask=thumb_resized)
+        # ✅ Step 4: Paste circular image at slightly right and lower
+        final_img.paste(thumb_resized, (86, 188), mask=thumb_resized)
 
         # Add title and texts
         draw = ImageDraw.Draw(final_img)
