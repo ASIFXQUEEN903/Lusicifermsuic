@@ -46,21 +46,26 @@ async def get_thumb(videoid):
         # Paste template overlay
         final_img.paste(template, (0, 0), mask=template)
 
-        # Create square crop from center to avoid stretch
+        # Create square crop from center
         width, height = raw_thumb.size
         min_dim = min(width, height)
         left = (width - min_dim) // 2
         top = (height - min_dim) // 2
         thumb_crop = raw_thumb.crop((left, top, left + min_dim, top + min_dim))
 
-        # Resize and mask circular thumbnail
-        thumb_resized = thumb_crop.resize((390, 390))
-        mask = Image.new("L", (390, 390), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, 390, 390), fill=255)
+        # Resize and apply circular mask
+        thumb_size = 390
+        thumb_resized = thumb_crop.resize((thumb_size, thumb_size))
+        mask = Image.new("L", (thumb_size, thumb_size), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, thumb_size, thumb_size), fill=255)
         thumb_resized.putalpha(mask)
 
-        # Paste the circular thumb image in center of the ring
-        final_img.paste(thumb_resized, (105, 165), mask=thumb_resized)
+        # 🔥 Place it in the center of the white ring (dynamically)
+        # ⚠️ These values depend on your template; adjust if you change template later
+        ring_center_x, ring_center_y = 300, 360  # Estimated center of white ring
+        thumb_x = ring_center_x - thumb_size // 2
+        thumb_y = ring_center_y - thumb_size // 2
+        final_img.paste(thumb_resized, (thumb_x, thumb_y), mask=thumb_resized)
 
         # Add title and other texts
         draw = ImageDraw.Draw(final_img)
@@ -71,7 +76,7 @@ async def get_thumb(videoid):
         draw.text((530, 350), f"00:00 / {duration}", fill="white", font=font_tag)
         draw.text((1250, 810), "XQUEEN SERVER", fill="white", font=font_tag)
 
-        # Save final output
+        # Save and cleanup
         final_img.convert("RGB").save(output_path)
         os.remove(f"cache/tmp_{videoid}.png")
         return output_path
