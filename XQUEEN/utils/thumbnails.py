@@ -20,22 +20,17 @@ def clear(text):
 
 def create_circular_thumb(image, size):
     """Creates a perfect circular thumbnail with transparent background"""
-    # Create square crop from center
     width, height = image.size
     min_dim = min(width, height)
     left = (width - min_dim) // 2
     top = (height - min_dim) // 2
     crop = image.crop((left, top, left + min_dim, top + min_dim))
-    
-    # Resize to desired size
     crop = crop.resize((size, size))
-    
-    # Create circular mask
+
     mask = Image.new("L", (size, size), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse((0, 0, size, size), fill=255)
-    
-    # Apply mask
+
     result = Image.new("RGBA", (size, size))
     result.paste(crop, (0, 0), mask=mask)
     return result
@@ -75,12 +70,12 @@ async def get_thumb(videoid):
         # Paste template overlay
         final_img.paste(template, (0, 0), mask=template)
 
-        # Create circular thumbnail (390px diameter)
-        thumb_size = 390  # Adjust this to match your template's white ring size
+        # Create circular thumbnail (fit perfectly inside white ring)
+        thumb_size = 494
         circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-        # Position the circular thumbnail (adjust these to match your template)
-        ring_center_x, ring_center_y = 300, 360  # Center of white ring in template
+        # Position it exactly at center of the white circle in template
+        ring_center_x, ring_center_y = 314, 408
         thumb_x = ring_center_x - thumb_size // 2
         thumb_y = ring_center_y - thumb_size // 2
         final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
@@ -90,7 +85,7 @@ async def get_thumb(videoid):
         font_title = ImageFont.truetype("XQUEEN/assets/font.ttf", 45)
         font_tag = ImageFont.truetype("XQUEEN/assets/font2.ttf", 25)
 
-        # Title text (centered)
+        # Title text
         title_text = clear(title)
         draw.text((630, 50), title_text, fill="white", font=font_title)
 
