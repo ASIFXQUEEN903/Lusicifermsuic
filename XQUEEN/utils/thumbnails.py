@@ -68,10 +68,10 @@ async def get_thumb(videoid):
         final_img.paste(template, (0, 0), mask=template)
 
         # 🟢 Adjusted: Circular thumbnail size and position
-        thumb_size = 430  # Increased from 400 to 430
+        thumb_size = 470  # Increased from 400 to 430
         circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-        ring_center_x, ring_center_y = 470, 500  # Moved down from y=480 to y=500
+        ring_center_x, ring_center_y = 550, 500  # Moved down from y=480 to y=500
         thumb_x = ring_center_x - thumb_size // 2
         thumb_y = ring_center_y - thumb_size // 2
         final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
