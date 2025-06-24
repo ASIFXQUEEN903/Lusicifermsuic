@@ -1,4 +1,7 @@
-import os, re, aiohttp, aiofiles
+import os
+import re
+import aiohttp
+import aiofiles
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from unidecode import unidecode
 from youtubesearchpython.__future__ import VideosSearch
@@ -7,11 +10,35 @@ from XQUEEN import app
 
 
 def clear(text):
+    """Limits text to approximately 60 characters to prevent overflow"""
     result = ""
     for word in text.split():
         if len(result) + len(word) < 60:
             result += " " + word
     return result.strip()
+
+
+def create_circular_thumb(image, size):
+    """Creates a perfect circular thumbnail with transparent background"""
+    # Create square crop from center
+    width, height = image.size
+    min_dim = min(width, height)
+    left = (width - min_dim) // 2
+    top = (height - min_dim) // 2
+    crop = image.crop((left, top, left + min_dim, top + min_dim))
+    
+    # Resize to desired size
+    crop = crop.resize((size, size))
+    
+    # Create circular mask
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size, size), fill=255)
+    
+    # Apply mask
+    result = Image.new("RGBA", (size, size))
+    result.paste(crop, (0, 0), mask=mask)
+    return result
 
 
 async def get_thumb(videoid):
@@ -21,6 +48,7 @@ async def get_thumb(videoid):
 
     url = f"https://www.youtube.com/watch?v={videoid}"
     try:
+        # Get YouTube video info
         search = VideosSearch(url, limit=1)
         results = (await search.next())["result"][0]
 
@@ -28,6 +56,7 @@ async def get_thumb(videoid):
         duration = results.get("duration", "00:00")
         thumbnail_url = results["thumbnails"][0]["url"].split("?")[0]
 
+        # Download thumbnail
         async with aiohttp.ClientSession() as session:
             async with session.get(thumbnail_url) as resp:
                 if resp.status == 200:
@@ -39,41 +68,36 @@ async def get_thumb(videoid):
         template = Image.open("XQUEEN/assets/thum.png").convert("RGBA")
         final_img = Image.new("RGBA", template.size, (0, 0, 0, 255))
 
-        # Optional blurred background
+        # Create blurred background
         bg = raw_thumb.resize(template.size).filter(ImageFilter.GaussianBlur(10))
         final_img.paste(bg, (0, 0))
 
         # Paste template overlay
         final_img.paste(template, (0, 0), mask=template)
 
-        # Create square crop from center
-        width, height = raw_thumb.size
-        min_dim = min(width, height)
-        left = (width - min_dim) // 2
-        top = (height - min_dim) // 2
-        thumb_crop = raw_thumb.crop((left, top, left + min_dim, top + min_dim))
+        # Create circular thumbnail (390px diameter)
+        thumb_size = 390  # Adjust this to match your template's white ring size
+        circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-        # Resize and apply circular mask
-        thumb_size = 390
-        thumb_resized = thumb_crop.resize((thumb_size, thumb_size))
-        mask = Image.new("L", (thumb_size, thumb_size), 0)
-        ImageDraw.Draw(mask).ellipse((0, 0, thumb_size, thumb_size), fill=255)
-        thumb_resized.putalpha(mask)
-
-        # 🔥 Place it in the center of the white ring (dynamically)
-        # ⚠️ These values depend on your template; adjust if you change template later
-        ring_center_x, ring_center_y = 300, 360  # Estimated center of white ring
+        # Position the circular thumbnail (adjust these to match your template)
+        ring_center_x, ring_center_y = 300, 360  # Center of white ring in template
         thumb_x = ring_center_x - thumb_size // 2
         thumb_y = ring_center_y - thumb_size // 2
-        final_img.paste(thumb_resized, (thumb_x, thumb_y), mask=thumb_resized)
+        final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
 
-        # Add title and other texts
+        # Add text elements
         draw = ImageDraw.Draw(final_img)
         font_title = ImageFont.truetype("XQUEEN/assets/font.ttf", 45)
         font_tag = ImageFont.truetype("XQUEEN/assets/font2.ttf", 25)
 
-        draw.text((630, 50), clear(title), fill="white", font=font_title)
+        # Title text (centered)
+        title_text = clear(title)
+        draw.text((630, 50), title_text, fill="white", font=font_title)
+
+        # Duration text
         draw.text((530, 350), f"00:00 / {duration}", fill="white", font=font_tag)
+
+        # Footer text
         draw.text((1250, 810), "XQUEEN SERVER", fill="white", font=font_tag)
 
         # Save and cleanup
