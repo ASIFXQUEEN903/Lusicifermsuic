@@ -223,7 +223,7 @@ async def gib_repo(client, CallbackQuery, _):
     await CallbackQuery.edit_message_media(
         InputMediaVideo("https://files.catbox.moe/8edpbi.mp4"),
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="ʙᴀᴄᴋ", callback_data=f"settings_back_helper")]]
+            [[InlineKeyboardButton(text="ʙᴀᴄᴋ", callback_data="gib_back_PM")]]
         ),
     )
 
@@ -400,3 +400,11 @@ async def vote_change(client, CallbackQuery, _):
         )
     except MessageNotModified:
         return
+
+
+@app.on_callback_query(filters.regex("gib_back_PM") & ~BANNED_USERS)
+@languageCB
+async def gib_back_to_panel(client, CallbackQuery, _):
+    if CallbackQuery.message.chat.type == ChatType.PRIVATE:
+        buttons = private_panel(_)
+        return await Callback
