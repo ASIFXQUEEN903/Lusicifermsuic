@@ -69,7 +69,7 @@ async def get_thumb(videoid):
         thumb_size = 400  # Slightly smaller to fit fully inside white ring
         circular_thumb = create_circular_thumb(raw_thumb, thumb_size)
 
-        ring_center_x, ring_center_y = 280, 360  # For 1280×720 template
+        ring_center_x, ring_center_y = 470, 480  # For 1280×720 template
         thumb_x = ring_center_x - thumb_size // 2
         thumb_y = ring_center_y - thumb_size // 2
         final_img.paste(circular_thumb, (thumb_x, thumb_y), circular_thumb)
