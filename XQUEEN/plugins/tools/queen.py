@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from BrandrdXMusic import app
+from XQUEEN import app
 
 
 @app.on_message(filters.command("repo"))
