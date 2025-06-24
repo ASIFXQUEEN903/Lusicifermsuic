@@ -30,8 +30,8 @@ async def start_pm(client, message: Message, _):
     await add_served_user(message.from_user.id)  
 
     # 🟡 Step 1: Send sticker and delete after 0.4 sec  
-    sticker = await message.reply_sticker("CAACAgUAAxkBAAEQI1BlTLmx7PtOO3aPNshEU2gCy7iAFgACNQUAApqMuVeA6eJ50VbvmDME")
-    await asyncio.sleep(0.4)
+    sticker = await message.reply_sticker("CAACAgUAAxkBAAEOxbdoWln3bXut27cwii0Uxy-zltlzHAACYQUAAv-7OFbUM1qnUk4VFjYE")
+    await asyncio.sleep(0.5)
     await sticker.delete()
 
     # 🔵 Step 2: Typing effect part  
