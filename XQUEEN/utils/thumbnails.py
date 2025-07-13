@@ -1,75 +1,159 @@
-import os, re, aiohttp, aiofiles
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from unidecode import unidecode
+import os
+import re
+import io
+import aiofiles
+import aiohttp
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 from youtubesearchpython.__future__ import VideosSearch
 from config import YOUTUBE_IMG_URL
-from XQUEEN import app
 
-def clear(text):
-    result = ""
-    for word in text.split():
-        if len(result) + len(word) < 60:
-            result += " " + word
-    return result.strip()
+# Constants
+CACHE_DIR = "cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
 
-async def get_thumb(videoid):
-    output_path = f"cache/{videoid}.png"
-    if os.path.exists(output_path):
-        return output_path
+PANEL_W, PANEL_H = 763, 545
+PANEL_X = (1280 - PANEL_W) // 2
+PANEL_Y = 88
+TRANSPARENCY = 170
+INNER_OFFSET = 36
 
-    url = f"https://www.youtube.com/watch?v={videoid}"
+THUMB_W, THUMB_H = 542, 273
+THUMB_X = PANEL_X + (PANEL_W - THUMB_W) // 2
+THUMB_Y = PANEL_Y + INNER_OFFSET
+
+TITLE_X = 377
+META_X = 377
+TITLE_Y = THUMB_Y + THUMB_H + 10
+META_Y = TITLE_Y + 45
+
+BAR_X, BAR_Y = 388, META_Y + 45
+BAR_RED_LEN = 280
+BAR_TOTAL_LEN = 480
+
+ICONS_W, ICONS_H = 415, 45
+ICONS_X = PANEL_X + (PANEL_W - ICONS_W) // 2
+ICONS_Y = BAR_Y + 48
+
+MAX_TITLE_WIDTH = 580
+
+def trim_to_width(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> str:
+    ellipsis = "…"
+    if font.getlength(text) <= max_w:
+        return text
+    for i in range(len(text) - 1, 0, -1):
+        if font.getlength(text[:i] + ellipsis) <= max_w:
+            return text[:i] + ellipsis
+    return ellipsis
+
+async def get_thumb(videoid: str, user_dp_url: str = None) -> str:
+    cache_path = os.path.join(CACHE_DIR, f"{videoid}_v4.png")
+    if os.path.exists(cache_path):
+        return cache_path
+
+    # YouTube video data fetch
+    results = VideosSearch(f"https://www.youtube.com/watch?v={videoid}", limit=1)
     try:
-        search = VideosSearch(url, limit=1)
-        results = (await search.next())["result"][0]
+        results_data = await results.next()
+        result_items = results_data.get("result", [])
+        if not result_items:
+            raise ValueError("No results found.")
+        data = result_items[0]
+        title = re.sub(r"\W+", " ", data.get("title", "Unsupported Title")).title()
+        thumbnail = data.get("thumbnails", [{}])[0].get("url", YOUTUBE_IMG_URL)
+        duration = data.get("duration")
+        views = data.get("viewCount", {}).get("short", "Unknown Views")
+    except Exception:
+        title, thumbnail, duration, views = "Unsupported Title", YOUTUBE_IMG_URL, None, "Unknown Views"
 
-        title = re.sub(r"\W+", " ", results.get("title", "No Title")).title()
-        duration = results.get("duration", "00:00")
-        thumbnail_url = results["thumbnails"][0]["url"].split("?")[0]
+    is_live = not duration or str(duration).strip().lower() in {"", "live", "live now"}
+    duration_text = "Live" if is_live else duration or "Unknown Mins"
 
+    # Download thumbnail
+    thumb_path = os.path.join(CACHE_DIR, f"thumb{videoid}.png")
+    try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(thumbnail_url) as resp:
+            async with session.get(thumbnail) as resp:
                 if resp.status == 200:
-                    async with aiofiles.open(f"cache/tmp_{videoid}.png", "wb") as f:
+                    async with aiofiles.open(thumb_path, "wb") as f:
                         await f.write(await resp.read())
-
-        # Load images
-        raw_thumb = Image.open(f"cache/tmp_{videoid}.png").convert("RGB")
-        template = Image.open("XQUEEN/assets/thum.png").convert("RGBA")
-        final_img = Image.new("RGBA", template.size, (0, 0, 0, 255))
-
-        # Step 1: Blurred background
-        bg = raw_thumb.resize(template.size).filter(ImageFilter.GaussianBlur(10))
-        final_img.paste(bg, (0, 0))
-
-        # Step 2: Crop square from center
-        width, height = raw_thumb.size
-        min_dim = min(width, height)
-        left = (width - min_dim) // 2
-        top = (height - min_dim) // 2
-        thumb_crop = raw_thumb.crop((left, top, left + min_dim, top + min_dim))
-
-        # Step 3: Resize to fill left side (square)
-        left_img_size = 460  # size of the square image
-        thumb_square = thumb_crop.resize((left_img_size, left_img_size))
-        final_img.paste(thumb_square, (50, 150))  # Adjust as needed
-
-        # Step 4: Paste overlay template (with icons/buttons etc.)
-        final_img.paste(template, (0, 0), mask=template)
-
-        # Step 5: Add text
-        draw = ImageDraw.Draw(final_img)
-        font_title = ImageFont.truetype("XQUEEN/assets/font.ttf", 45)
-        font_tag = ImageFont.truetype("XQUEEN/assets/font2.ttf", 25)
-
-        draw.text((600, 70), clear(title), fill="white", font=font_title)
-        draw.text((600, 360), f"00:00 / {duration}", fill="white", font=font_tag)
-        draw.text((600, 420), "XQUEEN SERVER", fill="white", font=font_tag)
-
-        # Save and cleanup
-        final_img.convert("RGB").save(output_path)
-        os.remove(f"cache/tmp_{videoid}.png")
-        return output_path
-
-    except Exception as e:
-        print(f"[THUMB ERROR] - {e}")
+    except Exception:
         return YOUTUBE_IMG_URL
+
+    # Create base image
+    base = Image.open(thumb_path).resize((1280, 720)).convert("RGBA")
+    bg = ImageEnhance.Brightness(base.filter(ImageFilter.BoxBlur(10))).enhance(0.6)
+
+    # Frosted glass panel
+    panel_area = bg.crop((PANEL_X, PANEL_Y, PANEL_X + PANEL_W, PANEL_Y + PANEL_H))
+    overlay = Image.new("RGBA", (PANEL_W, PANEL_H), (255, 255, 255, TRANSPARENCY))
+    frosted = Image.alpha_composite(panel_area, overlay)
+    mask = Image.new("L", (PANEL_W, PANEL_H), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, PANEL_W, PANEL_H), 50, fill=255)
+    bg.paste(frosted, (PANEL_X, PANEL_Y), mask)
+
+    # Draw details
+    draw = ImageDraw.Draw(bg)
+    try:
+        title_font = ImageFont.truetype("XQUEEN/assets/font2.ttf", 32)
+        regular_font = ImageFont.truetype("XQUEEN/assets/font.ttf", 18)
+    except OSError:
+        title_font = regular_font = ImageFont.load_default()
+
+    thumb = base.resize((THUMB_W, THUMB_H))
+    tmask = Image.new("L", thumb.size, 0)
+    ImageDraw.Draw(tmask).rounded_rectangle((0, 0, THUMB_W, THUMB_H), 20, fill=255)
+    bg.paste(thumb, (THUMB_X, THUMB_Y), tmask)
+
+    draw.text((TITLE_X, TITLE_Y), trim_to_width(title, title_font, MAX_TITLE_WIDTH), fill="black", font=title_font)
+    draw.text((META_X, META_Y), f"YouTube | {views}", fill="black", font=regular_font)
+
+    # Progress bar
+    draw.line([(BAR_X, BAR_Y), (BAR_X + BAR_RED_LEN, BAR_Y)], fill="red", width=6)
+    draw.line([(BAR_X + BAR_RED_LEN, BAR_Y), (BAR_X + BAR_TOTAL_LEN, BAR_Y)], fill="gray", width=5)
+    draw.ellipse([(BAR_X + BAR_RED_LEN - 7, BAR_Y - 7), (BAR_X + BAR_RED_LEN + 7, BAR_Y + 7)], fill="red")
+
+    draw.text((BAR_X, BAR_Y + 15), "00:00", fill="black", font=regular_font)
+    end_text = "Live" if is_live else duration_text
+    draw.text((BAR_X + BAR_TOTAL_LEN - (90 if is_live else 60), BAR_Y + 15), end_text, fill="red" if is_live else "black", font=regular_font)
+
+    # Icons
+    icons_path = "XQUEEN/assets/play_icons.png"
+    if os.path.isfile(icons_path):
+        ic = Image.open(icons_path).resize((ICONS_W, ICONS_H)).convert("RGBA")
+        r, g, b, a = ic.split()
+        black_ic = Image.merge("RGBA", (r.point(lambda *_: 0), g.point(lambda *_: 0), b.point(lambda *_: 0), a))
+        bg.paste(black_ic, (ICONS_X, ICONS_Y), black_ic)
+
+    # Add user DP circle
+    if user_dp_url:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(user_dp_url) as resp:
+                    if resp.status == 200:
+                        dp_bytes = await resp.read()
+                        with Image.open(io.BytesIO(dp_bytes)).convert("RGBA") as dp_img:
+                            dp_size = 80
+                            dp_img = dp_img.resize((dp_size, dp_size))
+
+                            mask = Image.new("L", (dp_size, dp_size), 0)
+                            draw_mask = ImageDraw.Draw(mask)
+                            draw_mask.ellipse((0, 0, dp_size, dp_size), fill=255)
+
+                            dp_x = PANEL_X + 20
+                            dp_y = PANEL_Y + PANEL_H - dp_size - 20
+                            bg.paste(dp_img, (dp_x, dp_y), mask)
+
+                            # Debug circle (green border)
+                            draw.ellipse((dp_x, dp_y, dp_x + dp_size, dp_y + dp_size), outline="green", width=2)
+
+        except Exception as e:
+            print(f"User DP error: {e}")
+
+    # Cleanup and save
+    try:
+        os.remove(thumb_path)
+    except OSError:
+        pass
+
+    bg.save(cache_path)
+    return cache_path
