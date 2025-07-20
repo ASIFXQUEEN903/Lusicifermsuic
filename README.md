@@ -1,11 +1,11 @@
-<h1 align="center"><b>𝗤𝗨𝗘𝗘𝗡-𝗠𝗨𝗦𝗜𝗖 🎧</b></h1>
+<h1 align="center"><b>LUCIFER-𝗠𝗨𝗦𝗜𝗖 🎧</b></h1>
 
 <p align="center">
-  <img src="https://files.catbox.moe/f8i9s1.jpg" width="500"/>
+  <img src="https://files.catbox.moe/9yv4tt.jpg" width="500"/>
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?color=FF00FF&width=620&lines=🍁+🎧+𝗣𝗢𝗪𝗘𝗥𝗘𝗗+𝗕𝗬+𝗤𝗨𝗘𝗘𝗡+𝗫+𝗠𝗨𝗦𝗜𝗖+🎧+🍁">
+  <img src="https://readme-typing-svg.herokuapp.com?color=FF00FF&width=620&lines=🍁+🎧+𝗣𝗢𝗪𝗘𝗥𝗘𝗗+𝗕𝗬+LUCIFER+𝗫+𝗠𝗨𝗦𝗜𝗖+🎧+🍁">
 </p>
 
 <h2 align="center">✨ Deploy Your Own Telegram Music Bot Easily! ✨</h2>
@@ -15,7 +15,7 @@
 ### 🌐 Deploy Method:
 
 #### 🚀 Deploy on Heroku
-[![Deploy to Heroku](https://img.shields.io/badge/Deploy%20On%20Heroku-green?style=for-the-badge&logo=heroku)](https://dashboard.heroku.com/new?template=https://github.com/ASIFXQUEEN903/User1musicbot)
+[![Deploy to Heroku](https://img.shields.io/badge/Deploy%20On%20Heroku-green?style=for-the-badge&logo=heroku)](https://dashboard.heroku.com/new?template=https://github.com/TriveniGuptaJi/LUCIFER-)
 
 ---
 
